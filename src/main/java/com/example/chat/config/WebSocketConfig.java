@@ -28,7 +28,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // WebSocket 연결 엔드포인트 설정
         registry.addEndpoint("/ws-chat")       // 웹소켓 연결 주소
-                .setAllowedOrigins("*")        // CORS 설정 (모든 도메인 허용)
+                .setAllowedOriginPatterns("*")        // CORS 설정 (모든 도메인 허용)
+                //.setAllowedOrigins("http://localhost:3000", "http://localhost:8080") // 프로덕션 레벨에서는 이렇게
                 .withSockJS();                 // SockJS 지원 활성화 (웹소켓을 지원하지 않는 브라우저를 위한 fallback)
     }
 }
