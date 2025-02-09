@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        .chat-container {
+            width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #eee;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 5px;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        input {
+            padding: 5px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="connection-controls">
+        <input type="text" id="userId" placeholder="User ID">
+        <input type="text" id="roomId" placeholder="Room ID">
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="controls">
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS('http://localhost:8080/ws-chat');
+        stompClient = Stomp.over(socket);
+
+        const roomId = document.getElementById('roomId').value;
+        const userId = document.getElementById('userId').value;
+
+        stompClient.connect({}, function(frame) {
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/topic/chat.' + roomId, function(message) {
+                showMessage(JSON.parse(message.body));
+            });
+
+            // 입장 메시지 전송
+            stompClient.send("/pub/chat.enter." + roomId, {}, JSON.stringify({
+                roomId: roomId,
+                senderId: userId,
+                type: 'ENTER',
+                content: userId + '님이 입장하셨습니다.'
+            }));
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            const roomId = document.getElementById('roomId').value;
+            const userId = document.getElementById('userId').value;
+
+            // 퇴장 메시지 전송
+            stompClient.send("/pub/chat.message." + roomId, {}, JSON.stringify({
+                roomId: roomId,
+                senderId: userId,
+                type: 'LEAVE',
+                content: userId + '님이 퇴장하셨습니다.'
+            }));
+
+            stompClient.disconnect();
+        }
+        console.log("Disconnected");
+    }
+
+    function sendMessage() {
+        const roomId = document.getElementById('roomId').value;
+        const userId = document.getElementById('userId').value;
+        const messageContent = document.getElementById('messageInput').value;
+
+        if (!messageContent.trim()) return;
+
+        stompClient.send("/pub/chat.message." + roomId, {}, JSON.stringify({
+            roomId: roomId,
+            senderId: userId,
+            type: 'TALK',
+            content: messageContent
+        }));
+
+        document.getElementById('messageInput').value = '';
+    }
+
+    function showMessage(message) {
+        const messagesDiv = document.getElementById('messages');
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message';
+
+        let content = '';
+        if (message.type === 'ENTER' || message.type === 'LEAVE') {
+            content = `<i>${message.content}</i>`;
+        } else {
+            content = `<strong>${message.senderId}</strong>: ${message.content}`;
+        }
+
+        messageElement.innerHTML = content;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // Enter 키로 메시지 전송
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+</script>
+</body>
+</html>
