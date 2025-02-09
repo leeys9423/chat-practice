@@ -41,11 +41,7 @@ public class ChatController {
     // REST API 엔드포인트 추가
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<List<ChatMessageResponse>> getRoomMessages(@PathVariable String roomId) {
-        List<ChatMessage> messages = chatService.getRoomMessages(roomId);
-        List<ChatMessageResponse> response = messages.stream()
-                .map(ChatMessageResponse::new)
-                .toList();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(chatService.getRoomMessages(roomId));
     }
 
     @GetMapping("/rooms/{roomId}")

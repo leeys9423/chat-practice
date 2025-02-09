@@ -2,6 +2,7 @@ package com.example.chat.service;
 
 import com.example.chat.domain.ChatMessage;
 import com.example.chat.domain.ChatRoom;
+import com.example.chat.dto.ChatMessageResponse;
 import com.example.chat.repository.ChatMessageRepository;
 import com.example.chat.repository.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +28,10 @@ public class ChatService {
         return saved;
     }
 
-    public List<ChatMessage> getRoomMessages(String roomId) {
-        return chatMessageRepository.findByRoomIdOrderByCreatedAtDesc(roomId);
+    public List<ChatMessageResponse> getRoomMessages(String roomId) {
+        return chatMessageRepository.findByRoomIdOrderByCreatedAtDesc(roomId).stream()
+                .map(ChatMessageResponse::new)
+                .toList();
     }
 
     public Optional<ChatRoom> getRoom(String roomId) {
