@@ -20,12 +20,15 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final SimpMessageSendingOperations messagingTemplate;
 
-    public ChatMessage saveAndSend(ChatMessage message) {
-        message.setCreatedAt(LocalDateTime.now());
-        ChatMessage saved = chatMessageRepository.save(message);
+    public void sendMessage(ChatMessage message) {
+        // 1. 메시지 저장
+        ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        messagingTemplate.convertAndSend("/topic/chat." + message.getRoomId(), saved);
-        return saved;
+        // 2. 메시지 브로드캐스트
+        messagingTemplate.convertAndSend(
+                "/topic/chat." + message.getRoomId(),
+                new ChatMessageResponse(savedMessage)
+        );
     }
 
     public List<ChatMessageResponse> getRoomMessages(String roomId) {

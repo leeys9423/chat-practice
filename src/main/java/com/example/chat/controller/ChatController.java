@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,18 +23,14 @@ public class ChatController {
     private final ChatService chatService;
 
     @MessageMapping("/chat.message.{roomId}")
-    @SendTo("/topic/chat.{roomId}")
-    public ChatMessageResponse sendMessage(@DestinationVariable String roomId,
-                                           @Payload ChatMessage message) {
-        return new ChatMessageResponse(chatService.saveAndSend(message));
+    public void sendMessage(@DestinationVariable String roomId, @Payload ChatMessage message) {
+        chatService.sendMessage(message);
     }
 
     @MessageMapping("/chat.enter.{roomId}")
-    @SendTo("/topic/chat.{roomId}")
-    public ChatMessageResponse enter(@DestinationVariable String roomId,
-                                     @Payload ChatMessage message) {
+    public void enter(@DestinationVariable String roomId, @Payload ChatMessage message) {
         message.setType(ChatMessage.MessageType.ENTER);
-        return new ChatMessageResponse(chatService.saveAndSend(message));
+        chatService.sendMessage(message);
     }
 
     // REST API 엔드포인트 추가
